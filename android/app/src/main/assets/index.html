@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcular día de la semana</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #1e3c72;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .fila-fecha {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        select {
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            flex: 1;
+            background: #fff;
+        }
+        select:focus { outline: none; border-color: #2a5298; }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            background: #2a5298;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: #1e3c72; }
+        .error {
+            background: #fee;
+            color: #c00;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .resultado {
+            background: #f0f7ee;
+            border: 2px solid #7cb342;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .resultado .fecha { color: #555; font-size: 0.95rem; }
+        .resultado .dia {
+            color: #33691e;
+            font-size: 2rem;
+            font-weight: 700;
+            text-transform: capitalize;
+            margin-top: 0.35rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Calcular día de la semana</h1>
+
+        <div class="error" id="error" hidden></div>
+
+        <form id="form-fecha">
+            <label for="mes">Selecciona una fecha</label>
+            <div class="fila-fecha">
+                <select id="dia" required></select>
+                <select id="mes" required>
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+                <select id="anio" required></select>
+            </div>
+            <button type="submit">Calcular</button>
+        </form>
+
+        <div class="resultado" id="resultado" hidden>
+            <div class="fecha" id="fecha-texto"></div>
+            <div class="dia" id="dia-semana"></div>
+        </div>
+    </div>
+
+    <script>
+        const DIAS_SEMANA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+        const MESES = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        ];
+        const DIAS_POR_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        function esBisiesto(anio) {
+            return (anio % 4 === 0 && anio % 100 !== 0) || anio % 400 === 0;
+        }
+
+        function diasDeMes(anio, mes) {
+            if (anio === 1582 && mes === 10) {
+                return [1, 2, 3, 4, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31];
+            }
+            const total = DIAS_POR_MES[mes - 1] + (mes === 2 && esBisiesto(anio) ? 1 : 0);
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+
+        function diaDeLaSemana(anio, mes, dia) {
+            let m = mes, a = anio;
+            if (m < 3) { m += 12; a -= 1; }
+            const k = a % 100;
+            const j = Math.floor(a / 100);
+            const h = (dia + Math.floor((13 * (m + 1)) / 5) + k + Math.floor(k / 4) + Math.floor(j / 4) + 5 * j) % 7;
+            return (h + 5) % 7;
+        }
+
+        function rellenar(select, valores) {
+            select.innerHTML = '';
+            for (const v of valores) {
+                const op = document.createElement('option');
+                op.value = String(v);
+                op.textContent = String(v).padStart(2, '0');
+                select.appendChild(op);
+            }
+        }
+
+        const diaSel = document.getElementById('dia');
+        const mesSel = document.getElementById('mes');
+        const anioSel = document.getElementById('anio');
+        const errorBox = document.getElementById('error');
+        const resultadoBox = document.getElementById('resultado');
+
+        const hoy = new Date();
+        const anioBase = hoy.getFullYear();
+        const anios = [1582, ...Array.from({ length: 120 }, (_, i) => anioBase - 119 + i)];
+        rellenar(anioSel, anios);
+        anioSel.value = String(hoy.getFullYear());
+        mesSel.value = String(hoy.getMonth() + 1);
+
+        function actualizarDias() {
+            const anio = Number(anioSel.value);
+            const mes = Number(mesSel.value);
+            const actual = Number(diaSel.value) || 1;
+            rellenar(diaSel, diasDeMes(anio, mes));
+            if (![...diaSel.options].some(o => Number(o.value) === actual)) {
+                diaSel.selectedIndex = 0;
+            }
+        }
+        actualizarDias();
+
+        anioSel.addEventListener('change', actualizarDias);
+        mesSel.addEventListener('change', actualizarDias);
+
+        document.getElementById('form-fecha').addEventListener('submit', function (e) {
+            e.preventDefault();
+            errorBox.hidden = true;
+            resultadoBox.hidden = true;
+
+            const anio = Number(anioSel.value);
+            const mes = Number(mesSel.value);
+            const dia = Number(diaSel.value);
+
+            if (!anio || !mes || !dia) {
+                mostrarError('Debes seleccionar una fecha.');
+                return;
+            }
+
+            const indice = diaDeLaSemana(anio, mes, dia);
+            document.getElementById('fecha-texto').textContent = dia + ' de ' + MESES[mes - 1] + ' de ' + anio;
+            document.getElementById('dia-semana').textContent = DIAS_SEMANA[indice];
+            resultadoBox.hidden = false;
+        });
+
+        function mostrarError(msg) {
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+    </script>
+</body>
+</html>

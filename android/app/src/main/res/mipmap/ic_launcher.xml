@@ -26,7 +26,6 @@
         android:pathData="M60,27 h8 a2,2 0 0 1 2,2 v7 h-12 v-7 a2,2 0 0 1 2,-2 z" />
 
     <path
-        android:fillColor="none"
         android:strokeColor="#1E3C72"
         android:strokeWidth="4"
         android:pathData="M54,60 m -16,0 a16,16 0 1 0 32,0 a16,16 0 1 0 -32,0" />

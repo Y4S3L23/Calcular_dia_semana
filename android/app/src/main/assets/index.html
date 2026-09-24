@@ -98,6 +98,7 @@
             <div class="fila-fecha">
                 <select id="dia" required></select>
                 <select id="mes" required>
+                    <option value="" selected hidden>Mes</option>
                     <option value="1">Enero</option>
                     <option value="2">Febrero</option>
                     <option value="3">Marzo</option>
@@ -151,8 +152,16 @@
             return (h + 5) % 7;
         }
 
-        function rellenar(select, valores) {
+        function rellenar(select, valores, placeholder) {
             select.innerHTML = '';
+            if (placeholder) {
+                const op = document.createElement('option');
+                op.value = '';
+                op.textContent = placeholder;
+                op.selected = true;
+                op.hidden = true;
+                select.appendChild(op);
+            }
             for (const v of valores) {
                 const op = document.createElement('option');
                 op.value = String(v);
@@ -167,20 +176,24 @@
         const errorBox = document.getElementById('error');
         const resultadoBox = document.getElementById('resultado');
 
-        const hoy = new Date();
         const anioMin = 1000;
         const anioMax = 3000;
         const anios = Array.from({ length: anioMax - anioMin + 1 }, (_, i) => anioMin + i);
-        rellenar(anioSel, anios);
-        anioSel.value = String(hoy.getFullYear());
-        mesSel.value = String(hoy.getMonth() + 1);
+        rellenar(anioSel, anios, 'Año');
+        actualizarDias();
 
         function actualizarDias() {
             const anio = Number(anioSel.value);
             const mes = Number(mesSel.value);
-            const actual = Number(diaSel.value) || 1;
-            rellenar(diaSel, diasDeMes(anio, mes));
-            if (![...diaSel.options].some(o => Number(o.value) === actual)) {
+            let valores = Array.from({ length: 31 }, (_, i) => i + 1);
+            if (anio && mes) {
+                valores = diasDeMes(anio, mes);
+            }
+            const actual = diaSel.value;
+            rellenar(diaSel, valores, 'Día');
+            if (actual && valores.some(v => String(v) === actual)) {
+                diaSel.value = actual;
+            } else {
                 diaSel.selectedIndex = 0;
             }
         }
@@ -188,6 +201,17 @@
 
         anioSel.addEventListener('change', actualizarDias);
         mesSel.addEventListener('change', actualizarDias);
+
+        document.getElementById('form-fecha').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!anioSel.value || !mesSel.value || !diaSel.value) {
+                    mostrarError('Debes seleccionar una fecha.');
+                } else {
+                    this.requestSubmit();
+                }
+            }
+        });
 
         document.getElementById('form-fecha').addEventListener('submit', function (e) {
             e.preventDefault();

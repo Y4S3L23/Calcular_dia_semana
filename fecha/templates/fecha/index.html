@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calcular día de la semana</title>
     {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'fecha/favicon.svg' %}">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            background: url("{% static 'fecha/background.svg' %}") center / 100% auto no-repeat, linear-gradient(135deg, #1e3c72, #2a5298);
+            background: url("{% static 'fecha/background.svg' %}") center / 73% auto no-repeat, linear-gradient(135deg, #1e3c72, #2a5298);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -104,6 +105,7 @@
             <div class="fila-fecha">
                 <select id="dia" name="dia" required></select>
                 <select id="mes" name="mes" required>
+                    <option value="" selected hidden>Mes</option>
                     <option value="1">Enero</option>
                     <option value="2">Febrero</option>
                     <option value="3">Marzo</option>
@@ -146,8 +148,16 @@
             return Array.from({ length: total }, (_, i) => i + 1);
         }
 
-        function rellenar(select, valores) {
+        function rellenar(select, valores, placeholder) {
             select.innerHTML = '';
+            if (placeholder) {
+                const op = document.createElement('option');
+                op.value = '';
+                op.textContent = placeholder;
+                op.selected = true;
+                op.hidden = true;
+                select.appendChild(op);
+            }
             for (const v of valores) {
                 const op = document.createElement('option');
                 op.value = String(v);
@@ -165,20 +175,30 @@
             const anioMin = 1000;
             const anioMax = 3000;
             const anios = Array.from({ length: anioMax - anioMin + 1 }, (_, i) => anioMin + i);
-            rellenar(anioSel, anios);
-            anioSel.value = '2026';
+            rellenar(anioSel, anios, 'Año');
+            actualizarDias();
 
             function actualizarDias() {
                 const anio = Number(anioSel.value);
                 const mes = Number(mesSel.value);
-                const diasActual = Number(diaSel.value) || 1;
-                rellenar(diaSel, diasDeMes(anio, mes));
-                if (![...diaSel.options].some(o => Number(o.value) === diasActual)) {
-                    diaSel.value = diaSel.options[0].value;
+                let valores = Array.from({ length: 31 }, (_, i) => i + 1);
+                if (anio && mes) {
+                    valores = diasDeMes(anio, mes);
+                }
+                const diasActual = diaSel.value;
+                rellenar(diaSel, valores, 'Día');
+                if (diasActual && valores.some(v => String(v) === diasActual)) {
+                    diaSel.value = diasActual;
+                } else {
+                    diaSel.selectedIndex = 0;
                 }
             }
 
             function actualizarFecha() {
+                fechaHidden.value = '';
+                if (!anioSel.value || !mesSel.value || !diaSel.value) {
+                    return;
+                }
                 const anio = Number(anioSel.value);
                 const mes = Number(mesSel.value);
                 const dia = Number(diaSel.value);
@@ -188,10 +208,6 @@
                     String(dia).padStart(2, '0');
             }
 
-            mesSel.value = '9';
-            actualizarDias();
-            actualizarFecha();
-
             anioSel.addEventListener('change', function () { actualizarDias(); actualizarFecha(); });
             mesSel.addEventListener('change', function () { actualizarDias(); actualizarFecha(); });
             diaSel.addEventListener('change', actualizarFecha);
@@ -199,9 +215,16 @@
             document.getElementById('form-fecha').addEventListener('submit', function (e) {
                 if (!anioSel.value || !mesSel.value || !diaSel.value) {
                     e.preventDefault();
-                    return;
+                    fechaHidden.value = '';
                 }
                 actualizarFecha();
+            });
+
+            document.getElementById('form-fecha').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.requestSubmit();
+                }
             });
         });
     </script>

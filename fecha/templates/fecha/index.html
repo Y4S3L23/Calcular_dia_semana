@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calcular día de la semana</title>
+    {% load static %}
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            background: url("{% static 'fecha/background.svg' %}") center / cover no-repeat, linear-gradient(135deg, #1e3c72, #2a5298);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -161,8 +162,9 @@
             const anioSel = document.getElementById('anio');
             const fechaHidden = document.getElementById('fecha');
 
-            const anioBase = new Date().getFullYear();
-            const anios = [1582, ...Array.from({ length: 120 }, (_, i) => anioBase - 119 + i)];
+            const anioMin = 1000;
+            const anioMax = 3000;
+            const anios = Array.from({ length: anioMax - anioMin + 1 }, (_, i) => anioMin + i);
             rellenar(anioSel, anios);
             anioSel.value = '2026';
 

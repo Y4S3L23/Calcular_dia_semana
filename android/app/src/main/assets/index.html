@@ -40,7 +40,7 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
-        select {
+        select, input[type="number"] {
             padding: 0.75rem;
             border: 2px solid #ddd;
             border-radius: 8px;
@@ -48,7 +48,15 @@
             flex: 1;
             background: #fff;
         }
-        select:focus { outline: none; border-color: #2a5298; }
+        select:focus, input[type="number"]:focus { outline: none; border-color: #2a5298; }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
         button {
             width: 100%;
             padding: 0.85rem;
@@ -94,25 +102,11 @@
         <div class="error" id="error" hidden></div>
 
         <form id="form-fecha">
-            <label for="mes">Selecciona una fecha</label>
+            <label for="dia">Selecciona una fecha</label>
             <div class="fila-fecha">
-                <select id="dia" required></select>
-                <select id="mes" required>
-                    <option value="" selected hidden>Mes</option>
-                    <option value="1">Enero</option>
-                    <option value="2">Febrero</option>
-                    <option value="3">Marzo</option>
-                    <option value="4">Abril</option>
-                    <option value="5">Mayo</option>
-                    <option value="6">Junio</option>
-                    <option value="7">Julio</option>
-                    <option value="8">Agosto</option>
-                    <option value="9">Septiembre</option>
-                    <option value="10">Octubre</option>
-                    <option value="11">Noviembre</option>
-                    <option value="12">Diciembre</option>
-                </select>
-                <select id="anio" required></select>
+                <input type="number" id="dia" inputmode="numeric" placeholder="Día">
+                <input type="number" id="mes" inputmode="numeric" placeholder="Mes">
+                <input type="number" id="anio" inputmode="numeric" placeholder="Año">
             </div>
             <button type="submit">Calcular</button>
         </form>
@@ -152,64 +146,30 @@
             return (h + 5) % 7;
         }
 
-        function rellenar(select, valores, placeholder) {
-            select.innerHTML = '';
-            if (placeholder) {
-                const op = document.createElement('option');
-                op.value = '';
-                op.textContent = placeholder;
-                op.selected = true;
-                op.hidden = true;
-                select.appendChild(op);
+        function fechasValidas(anio, mes, dia) {
+            if (!Number.isInteger(anio) || !Number.isInteger(mes) || !Number.isInteger(dia)) {
+                return false;
             }
-            for (const v of valores) {
-                const op = document.createElement('option');
-                op.value = String(v);
-                op.textContent = String(v).padStart(2, '0');
-                select.appendChild(op);
+            if (anio < 1000 || anio > 3000 || mes < 1 || mes > 12 || dia < 1) {
+                return false;
             }
+            return diasDeMes(anio, mes).includes(dia);
         }
 
-        const diaSel = document.getElementById('dia');
-        const mesSel = document.getElementById('mes');
-        const anioSel = document.getElementById('anio');
+        const diaInput = document.getElementById('dia');
+        const mesInput = document.getElementById('mes');
+        const anioInput = document.getElementById('anio');
         const errorBox = document.getElementById('error');
         const resultadoBox = document.getElementById('resultado');
 
-        const anioMin = 1000;
-        const anioMax = 3000;
-        const anios = Array.from({ length: anioMax - anioMin + 1 }, (_, i) => anioMin + i);
-        rellenar(anioSel, anios, 'Año');
-        actualizarDias();
-
-        function actualizarDias() {
-            const anio = Number(anioSel.value);
-            const mes = Number(mesSel.value);
-            let valores = Array.from({ length: 31 }, (_, i) => i + 1);
-            if (anio && mes) {
-                valores = diasDeMes(anio, mes);
-            }
-            const actual = diaSel.value;
-            rellenar(diaSel, valores, 'Día');
-            if (actual && valores.some(v => String(v) === actual)) {
-                diaSel.value = actual;
-            } else {
-                diaSel.selectedIndex = 0;
-            }
-        }
-        actualizarDias();
-
-        anioSel.addEventListener('change', actualizarDias);
-        mesSel.addEventListener('change', actualizarDias);
+        [diaInput, mesInput, anioInput].forEach(function (el) {
+            el.addEventListener('input', function () { errorBox.hidden = true; });
+        });
 
         document.getElementById('form-fecha').addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (!anioSel.value || !mesSel.value || !diaSel.value) {
-                    mostrarError('Debes seleccionar una fecha.');
-                } else {
-                    this.requestSubmit();
-                }
+                this.requestSubmit();
             }
         });
 
@@ -218,12 +178,16 @@
             errorBox.hidden = true;
             resultadoBox.hidden = true;
 
-            const anio = Number(anioSel.value);
-            const mes = Number(mesSel.value);
-            const dia = Number(diaSel.value);
+            const anio = parseInt(anioInput.value, 10);
+            const mes = parseInt(mesInput.value, 10);
+            const dia = parseInt(diaInput.value, 10);
 
-            if (!anio || !mes || !dia) {
-                mostrarError('Debes seleccionar una fecha.');
+            if (!anioInput.value.trim() || !mesInput.value.trim() || !diaInput.value.trim()) {
+                mostrarError('Completa el día, el mes y el año.');
+                return;
+            }
+            if (!fechasValidas(anio, mes, dia)) {
+                mostrarError('La fecha no es válida. Año: 1000-3000, mes: 1-12 y un día que exista en ese mes.');
                 return;
             }
 
